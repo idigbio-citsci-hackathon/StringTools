@@ -44,11 +44,15 @@ sub list_split {
       (?<=[,;]) | # keep comma with preceding.
       (?:\s+(?:with|and|&)\s+) |
       (?:\s+w/)
-    }x, $in; 
+    }xi, $in; # I don't have positive examples where case-insensitive is actually necessary.
   my @out;
   while (@tokens) {
     my $token = shift @tokens;
-    if ($token =~ /^\s*jr\.?\s*,?\s*$/i && @out) {
+    if ($token =~ /
+        ^\s*(
+          jr\.? |
+          ph\.?d\.?
+        )\s*,?\s*$/xi && @out) {
       $out[scalar @out - 1] .= $token;
     } else {
       push @out, $token;
@@ -60,7 +64,8 @@ sub list_split {
 
 ### Test data:
 
-# Note that this is just splits and maps names: no other clean-up is in scope.
+# Note that this is just splits name strings, and associates stray initials with the right last name.
+# No other clean-up is in scope.
 # "det" or "phd" are not touched.
 
 __DATA__
@@ -77,10 +82,10 @@ william p adams | william p adams
 A. Gholson Jr w/Wilson Baker | A. Gholson Jr | Wilson Baker
 D. B. Ward, with H. F. Decker | D. B. Ward | H. F. Decker
 R. K. Godfrey (det.) & Richard D. Houk | R. K. Godfrey (det.) | Richard D. Houk
+Cecil R. Slaughter, Ph.D. | Cecil R. Slaughter, Ph.D.
 
 ### These don't pass yet:
 
-# Cecil R. Slaughter, Ph.D. | Cecil R. Slaughter, Ph.D.
 # R, Kral & P.L. Redfearn | R, Kral | P.L. Redfearn
 # D. B. & S. S. Ward | D. B. Ward | S. S. Ward
 # R> K> Godfrey with Robt. & John Lazor | R> K> Godfrey | Robt. Lazor | John Lazor
