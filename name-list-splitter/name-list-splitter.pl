@@ -117,6 +117,8 @@ sub list_split {
 
 __DATA__
 
+### Basics: split on punct or preposition, then reconnect 'jr' and 'sr'.
+
 Stuttgart | Stuttgart
 James D. Ray Jr. | James D. Ray Jr.
 C. Earle Smith, Jr. | C. Earle Smith, Jr.
@@ -141,8 +143,12 @@ S Leonard + H McAninch | S Leonard | H McAninch
 Mrs. C. W. Hanes | Mrs. C. W. Hanes
 Coll. Ame Garthwright | Coll. Ame Garthwright
 W.H. Wagner , Jr. | W.H. Wagner , Jr.
+Ann F-Johnson | Ann F-Johnson
 
-### Comma which should be period:
+
+### Commas which should be periods:
+
+# 98/12548 in calbug match m{\b[A-Z],}
 
 R, Kral & P.L. Redfearn | R. Kral | P.L. Redfearn
 R, K, Godfrey | R. K. Godfrey
@@ -150,29 +156,52 @@ W. A, Sliveus | W. A. Sliveus
 R,K, Godfrey & J.P, Gillespie | R.K. Godfrey | J.P. Gillespie
 R. K,. Godfrey and Richard D. Houk | R. K. Godfrey | Richard D. Houk
 
-### ACK!! No punctuation between names:
-
-# M.B. H.L. | M.B. H.L.
-# D.R.Windler B.r. Sinor | D.R.Windler | B.r. Sinor
-# S.W.Leonard D. Culwell M.Ripperton | S.W.Leonard | D. Culwell | M.Ripperton
-# R. K. Godfrey Richard D. Houk | R. K. Godfrey | Richard D. Houk
 
 ### Name distribution:
+
+# TODO: frequency?
 
 Nancy Craft Coile, w/ Robert, Danielle & Robbie Coile | Nancy Craft Coile | Robert Coile | Danielle Coile | Robbie Coile
 P.J. Crutchfeld & Laura & Thomas Crutchfield | P.J. Crutchfeld | Laura Crutchfield | Thomas Crutchfield
 D. B. & S. S. Ward | D. B. Ward | S. S. Ward
 Robert & Mabel Kral/ | Robert Kral | Mabel Kral
 R. K. Godfrrey with Robt. & John Lazor | R. K. Godfrrey | Robt. Lazor | John Lazor
+Bruce Hansen with T.&B. Cochrane, C.S. Keller & M. Waterway | Bruce Hansen | T. Cochrane | B. Cochrane | C.S. Keller | M. Waterway
+
+# TODO: Is this correct? "Lafon" and "Grey" are weird first names.
+# If a name list look-up were incorporated, would the behavior be different?
+
+Lafon & Gray Bill | Lafon Bill | Gray Bill
+
 
 ### Slashes:
 
+# 242/12548 in calbug match m{/}
+
+Lytton J. Musselman / Elizabeth R. Musselman | Lytton J. Musselman | Elizabeth R. Musselman
 Michel G. Lelong / Ken Rogers | Michel G. Lelong | Ken Rogers
 SW Leonard/D. Culwell/M. Ripperton | SW Leonard | D. Culwell | M. Ripperton
 A. H. Curtiss/ det. C. B. Heiser, Jr. | A. H. Curtiss | det. C. B. Heiser, Jr.
 # R/K/ Godfrey & John Morrill
 
+
+### ACK!! No punctuation between names:
+
+# 94/12548 in calbug match m{^[A-Za-z. ]+$} && /(.*\.){4,}/ && ! /\band|with\b/
+
+# M.B. H.L. | M.B. | H.L.
+# D.R.Windler B.r. Sinor | D.R.Windler | B.r. Sinor
+# S.W.Leonard D. Culwell M.Ripperton | S.W.Leonard | D. Culwell | M.Ripperton
+# R. K. Godfrey Richard D. Houk | R. K. Godfrey | Richard D. Houk
+
+
 ### Parens:
+
+# 287/12548 in calbug match m{[()]}
+# 175/12548 in calbug match m{[()]} && ! m{\(\?\)}
+
+# TODO: perhaps an earlier phase in the process should remove parenthetical expressions
+# which include dates? Are these determinations rather than the original collection?
 
 # John Mayberg (By W)
 # (Mary L. Leigh) J. Rowntrey
@@ -183,7 +212,17 @@ A. H. Curtiss/ det. C. B. Heiser, Jr. | A. H. Curtiss | det. C. B. Heiser, Jr.
 # Loran C Anderson ( Scott Sundberd 1987)
 # (MARY L. LEIGH) J. ROUNTREY
 
+
 ### Dashes:
+
+# 226/12548 in calbug match m{-}
+# 128/12548 in calbug match m{-} && m{^[A-Z -]+$} (Perhaps all from a single user?)
+
+Barton H. warnock, Reginald Rose-Innes | Barton H. warnock | Reginald Rose-Innes
+Marie-Victorin, Rolland-Germain, Marcel Raymond | Marie-Victorin | Rolland-Germain | Marcel Raymond
+REGINALD TOSE-INNES & BARTON H. WARNOCK | REGINALD TOSE-INNES | BARTON H. WARNOCK
+
+# TODO: I really have no good heuristic in mind for these:
 
 # H.H. Iltis - D. Parker
 # ROBERT K GODFREY - R W SIMONS - ANGUS GHOLSON
@@ -191,29 +230,55 @@ A. H. Curtiss/ det. C. B. Heiser, Jr. | A. H. Curtiss | det. C. B. Heiser, Jr.
 # Steve L. Orzell- Edwin L. Bridges
 # A GHOLSON, JR - SUSANNE COOPER - WILSON BAKER
 # H Maurushat - V. Sullivan, C. Hudson
-# REGINALD TOSE-INNES & BARTON H. WARNOCK
 # R.K. Godfrey w/- Christopher Campbell
-# Barton H. warnock, Reginald Rose-Innes
-# Marie-Victorin, Rolland-Germain, Marcel Raymond
 
-### Other:
 
-# R> K> Godfrey with Robt. & John Lazor | R> K> Godfrey | Robt. Lazor | John Lazor
-# Lytton J. Musselman / Elizabeth R. Musselman
+### Inverted Names:
+
+# rare in calbug?
+
+# Betts, Thealcald Jonas, Baker.
+
+
+### Question marks:
+
+# 323/12548 in calbug match m{\?}
+# TODO: Just drop, perhaps with whole phrase?
+# Maybe this is resolved at an earlier step in the processing?
+
 # Judith Canne and Jose Schunkell (or Schunkey?)
 # ?Rufus Crane
-# A.H.S.F.
 # Lloyd T. (?Y.?) Card (?Cart?)
-# R:D. Houk ans R:K: Godfrey
-# Bruce Hansen with T.&B. Cochrane, C.S. Keller & M. Waterway
-# Loran C: Anderson
 
-### ???:
 
-# Loran C. Anderson w/Gil Nelson R>K> Godfrey Herbarium (FSU)
-# Ann F-Johnson
-# D.B. Ward 3-19, with BTY 421
-# Betts, Thealcald Jonas, Baker.
+### Just initials:
+
+# 122/12548 in calbug match !m{\w{2}}
+
+# A.H.S.F.
+
+
+### Dates:
+
+# 77/12548 in calbug match m{\b(19|20)\d\d\b}
+# TODO: Dates removed at an earlier step in processing?
+# These records often also involve a determination.
+
 # Donald Eves (1956) and L. J. Ultal (1981)
-# Lafon & Gray Bill
 
+
+### Other numbers:
+
+# 47/12548 in calbug match m{\b\d{3}\b}
+
+# D.B. Ward 3-19, with BTY 421
+
+
+### Random punctuation:
+
+# 30/12548 in calbug match m{[^A-Za-z0-9();/+&,. -?]} && !m{\?}
+
+# R> K> Godfrey with Robt. & John Lazor | R> K> Godfrey | Robt. Lazor | John Lazor
+# Loran C. Anderson w/Gil Nelson R>K> Godfrey Herbarium (FSU)
+# R:D. Houk ans R:K: Godfrey
+# Loran C: Anderson
