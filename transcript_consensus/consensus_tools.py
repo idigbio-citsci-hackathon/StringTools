@@ -90,6 +90,8 @@ def character_consensus(x, wdir):
     # Convert string into SeqRecord objects
     y = [re.sub(" ", "_", string) for string in x]
     y = [re.sub("\.", "%", string) for string in y]
+    y = [re.sub("\(", "[", string) for string in y]
+    y = [re.sub("\)", "]", string) for string in y]
     temp = [Seq(string, "alphabet") for string in y]
     temp = [SeqRecord(string, id = str(acc)) for acc, string in enumerate(temp)]
     temp_file = os.path.join(wdir, "temp.fasta")
@@ -113,6 +115,9 @@ def character_consensus(x, wdir):
 
     consensus = re.sub("_", " ", str(consensus))
     consensus = re.sub("%", ".", str(consensus))
+    consensus = re.sub("\[", "(", str(consensus))
+    consensus = re.sub("\]", ")", str(consensus))
+    consensus = consensus.strip()
     return consensus
 
 y = ["12 mi. W. Oakland, Cal", "12 mi West Oakland, Califor", "12 mi. W. Oakland, Cal", "12 miles W Oakland, Cal"]
@@ -173,16 +178,16 @@ def temp_wrapper(accession, field, data, method, wdir):
 
 # Pulled from wrapper for debugging
 
-entry_list = zip(list(nfn_data["filename"]), list(nfn_data["Collector"]))
+entry_list = zip(list(nfn_data["filename"]), list(nfn_data["Locality"]))
 entry_id = defaultdict(list)
 for k,v in entry_list:
     entry_id[k].append(v)
-
+entry_id["UMMZI212852 Sympetrum madidum.jpg"]
 
 ## TO DO ## Convert spaces into tokens
 
 # Comparison with gold data set
-'''
+
 character_coll = temp_wrapper(accession = "filename", field = "Collector", method = "character", data = nfn_data, wdir = test_dir)
 character_loc = temp_wrapper(accession = "filename", field = "Locality", method = "character", data = nfn_data, wdir = test_dir)
 
@@ -195,19 +200,16 @@ character_results = pd.merge(character_results, character_loc, on = "filename", 
 token_results = pd.merge(gold_data, token_coll, on = "filename", suffixes = ("_gold", "_consensus"))
 token_results = pd.merge(token_results, token_loc, on = "filename", suffixes = ("_gold", "_consensus"))
 
-x1 = token_results["Collector_consensus"] == token_results["Collector_gold"]
-x2 = token_results["Locality_consensus"] == token_results["Locality_gold"]
+x1 = character_results["Collector_consensus"] == character_results["Collector_gold"]
+x2 = character_results["Locality_consensus"] == character_results["Locality_gold"]
 
-float(sum(x1))/float(len(x1))
-float(sum(x2))/float(len(x2))
-
-
+y1 = token_results["Collector_consensus"] == token_results["Collector_gold"]
+y2 = token_results["Locality_consensus"] == token_results["Locality_gold"]
 
 
+token_results.to_csv(os.path.join(test_dir, "token_consensus.csv"))
+character_results.to_csv(os.path.join(test_dir, "character_consensus.csv"))
 
-token_results.to_csv(os.path.join(test_dir, "prelim.csv"))
-
-'''
 
 '''
 ## APPROACH 3: SEQUENCE MATCHER APPROACH (might be faster?)
