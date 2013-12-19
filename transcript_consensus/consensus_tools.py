@@ -72,6 +72,10 @@ def token_consensus(x, wdir):
     consensus = summary_align.dumb_consensus(threshold = 0.5, consensus_alpha = "alphabet", require_multiple = 1, ambiguous = "")
 
     # Reinterpret consensus
+    inv_unique_token_id = {v:k for k, v in unique_token_id.items()}
+    consensus = [inv_unique_token_id[token] for token in consensus]
+    consensus = string.join(consensus, sep = " ")
+    
     return consensus
 
 ## APPROACH 2: CHARACTER ALIGNMENT
@@ -104,14 +108,16 @@ def character_consensus(x, wdir):
     # Determine consensus
     consensus = summary_align.dumb_consensus(threshold = 0.5, require_multiple = 1, ambiguous = "")
 
-    return [alignres, consensus, re.sub("_", " ", str(consensus))]
+    return re.sub("_", " ", str(consensus))
 
 
 ## TESTING
 y = ["12 mi. W. Oakland", "12 mi. West Oakland", "12 mi W. Oakland", "12 miles W Oakland"]
 test_dir = "/Users/junyinglim/Desktop"
-test = character_consensus(y, wdir = test_dir)
 
+
+asd1 = character_consensus(y, wdir = test_dir)
+asd2 = token_consensus(y, test_dir)
 
 ## APPROACH 3: SEQUENCE MATCHER APPROACH
 # Sequence align token IDs
