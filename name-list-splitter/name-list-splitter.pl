@@ -16,8 +16,9 @@ if (!@ARGV) {
     
     my $expected = join ' | ',@list;
     my $actual = join ' | ',@out;
-    $expected =~s/\s+\|\s+/ | /g;
-    $actual =~s/\s+\|\s+/ | /g;
+    $expected =~s/\s+/ /g;
+    $actual =~s/\s+/ /g;
+    $expected =~s/\s+$//; # ignore trailing space in tests
     if ($expected ne $actual) {
       warn "FAIL: expected '$expected'; actual '$actual'\n";
       $fail++;
@@ -45,8 +46,8 @@ sub list_split {
     split m{
       (?<=[,;]) | # keep comma with preceding.
       (?:\s+\W?(?:with|and)\W?\s+) |
-      (?:\s+w/) |
-      (?:\+|&|/)
+      (?:\bw/) |
+      (?:[+&()/]) # not condfident that splitting on parens is best.
     }xi, $in; # I don't have positive examples where case-insensitive is actually necessary.
   my @names;
   while (@tokens) {
@@ -63,14 +64,14 @@ sub list_split {
     }
   }
   
-  @names = map {
+  @names = grep {$_} map {
     s/^\s+//;
     s/\s+$//;
     s/[,;]$//;
     $_
   } @names;
   
-  # Name distribution magic:
+  # Name distribution:
   #   Scan from right-to-left;
   #     if there's a last name, store it
   #     if it's just a first name, and we have a last name, append it.
@@ -131,7 +132,6 @@ Collected by: R. K. Godfrey | R. K. Godfrey
 william p adams | william p adams
 A. Gholson Jr w/Wilson Baker | A. Gholson Jr | Wilson Baker
 D. B. Ward, with H. F. Decker | D. B. Ward | H. F. Decker
-R. K. Godfrey (det.) & Richard D. Houk | R. K. Godfrey (det.) | Richard D. Houk
 Cecil R. Slaughter, Ph.D. | Cecil R. Slaughter, Ph.D.
 George Eiten, Liene T. Eiten, Gil M. Felippe & J.M. de Freitas Campes | George Eiten | Liene T. Eiten | Gil M. Felippe | J.M. de Freitas Campes
 Tim Reeves, Sr | Tim Reeves, Sr
@@ -203,15 +203,16 @@ A. H. Curtiss/ det. C. B. Heiser, Jr. | A. H. Curtiss | det. C. B. Heiser, Jr.
 # TODO: perhaps an earlier phase in the process should remove parenthetical expressions
 # which include dates? Are these determinations rather than the original collection?
 
-# John Mayberg (By W)
-# (Mary L. Leigh) J. Rowntrey
-# A.R. Diamond (w. J.D. Freeman)
-# David Hall (w/ Gary Schultz)
-# R K Godfrey ( Shirley Mah Kooyman 1980)
-# (Karl, Godfrey 1958); R K Godfrey 1976
-# Loran C Anderson ( Scott Sundberd 1987)
-# (MARY L. LEIGH) J. ROUNTREY
+John Mayberg (By W) | John Mayberg | By W
+(Mary L. Leigh) J. Rowntrey | Mary L. Leigh | J. Rowntrey
+A.R. Diamond (w. J.D. Freeman) | A.R. Diamond | w. J.D. Freeman # TODO: special handling for "w."?
+David Hall (w/ Gary Schultz) | David Hall | Gary Schultz
+R K Godfrey ( Shirley Mah Kooyman 1980) | R K Godfrey | Shirley Mah Kooyman 1980
+Loran C Anderson ( Scott Sundberd 1987) | Loran C Anderson | Scott Sundberd 1987
+(MARY L. LEIGH) J. ROUNTREY | MARY L. LEIGH | J. ROUNTREY
 
+# (Karl, Godfrey 1958); R K Godfrey 1976 | ???
+# R. K. Godfrey (det.) & Richard D. Houk | R. K. Godfrey (det.) | Richard D. Houk # TODO: maybe strip out the "(det.)"?
 
 ### Dashes:
 
