@@ -48,7 +48,7 @@ sub list_split {
       (?:\s+w/) |
       (?:\+|&|/)
     }xi, $in; # I don't have positive examples where case-insensitive is actually necessary.
-  my @out;
+  my @names;
   while (@tokens) {
     my $token = shift @tokens;
     if ($token =~ /
@@ -56,14 +56,51 @@ sub list_split {
           jr\.? |
           sr\.? |
           ph\.?d\.?
-        )\s*,?\s*$/xi && @out) {
-      $out[scalar @out - 1] .= $token;
+        )\s*,?\s*$/xi && @names) {
+      $names[scalar @names - 1] .= $token;
     } else {
-      push @out, $token;
+      push @names, $token;
     }
   }
-  @out = map {s/[,;]$//;$_} @out;
-  return @out;
+  
+  @names = map {
+    s/^\s+//;
+    s/\s+$//;
+    s/[,;]$//;
+    $_
+  } @names;
+  
+  # Name distribution magic:
+  #   Scan from right-to-left;
+  #     if there's a last name, store it
+  #     if it's just a first name, and we have a last name, append it.
+  
+  my $last_name;
+  my @full_names;
+  my $first_or_init_re = qr{
+    (?:(?:\w{2,}\.?) # name, possibly followed by period. (too fragile?)
+    |(?:\w\.\s?)+) # initials
+  }x;
+  while (@names) {
+    my $current = pop @names;
+    if ($current=~/
+        $first_or_init_re # first name or initials
+        \s+
+        ([\w-]{2,}) # last name
+        $ # no trailing punctuation
+        /x) {
+      $last_name = $1;
+    } elsif ($last_name && $current=~/^$first_or_init_re$/) {
+      $current .= ' '.$last_name;
+    } else {
+      # no-op
+    }
+    unshift @full_names, $current;
+  }
+  
+  @full_names = map {s/\s+/ /g;$_} @full_names;
+  
+  return @full_names;
 }
 
 ### Test data:
@@ -79,6 +116,7 @@ sub list_split {
 # All test cases are taken from real crowd-sourced data.
 
 __DATA__
+
 Stuttgart | Stuttgart
 James D. Ray Jr. | James D. Ray Jr.
 C. Earle Smith, Jr. | C. Earle Smith, Jr.
@@ -121,11 +159,11 @@ R. K,. Godfrey and Richard D. Houk | R. K. Godfrey | Richard D. Houk
 
 ### Name distribution:
 
-# Nancy Craft Coile, w/ Robert, Danielle & Robbie Coile | Nancy Craft Coile | Robert Coile | Danielle Coile | Robbie Coile
-# P.J. Crutchfeld & Laura & Thomas Crutchfield | P.J. Crutchfeld | Laura Crutchfield | Thomas Crutchfield
-# R. K. Godfrrey with Robt. & John Lazor | R. K. Godfrrey | Robt. Lazor | John Lazor
-# D. B. & S. S. Ward | D. B. Ward | S. S. Ward
-# Robert & Mabel Kral/
+Nancy Craft Coile, w/ Robert, Danielle & Robbie Coile | Nancy Craft Coile | Robert Coile | Danielle Coile | Robbie Coile
+P.J. Crutchfeld & Laura & Thomas Crutchfield | P.J. Crutchfeld | Laura Crutchfield | Thomas Crutchfield
+D. B. & S. S. Ward | D. B. Ward | S. S. Ward
+Robert & Mabel Kral/ | Robert Kral | Mabel Kral
+R. K. Godfrrey with Robt. & John Lazor | R. K. Godfrrey | Robt. Lazor | John Lazor
 
 ### Slashes:
 
