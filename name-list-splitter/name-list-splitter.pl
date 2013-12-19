@@ -40,9 +40,26 @@ if (!@ARGV) {
 sub list_split {
   my $in = shift;
   $in =~s/^collected by\b:?//i;
-  $in =~s/\b(collectors?)|(collrs?\.?)$//i;
+  $in =~s/\b(collectors?)|(collrs?\.?)$//i; # totally adhoc
   $in =~s/(?<![A-Z])([A-Z]),/$1./g; # There were lots of commas after initials.
   $in =~s/\.+/./g;
+  
+  # Before tokenization, look at the very end and see if there are trailing initials.
+  # This would suggest that the names are transposed: If they are, try to switch them back. 
+  # I haven't seen that many instances where names are inverted in this data,
+  # so the match is pretty strict, since it could really confuse things is misapplied.
+  
+  # (That said, if you don't have any inverted names, better just to delete this.)
+  
+  my $strict_init_re = qr{(?:[A-Z]\.\s?){1,2}};
+  my $strict_last_re = qr{\w{2,}};
+  
+  if ($in =~ /$strict_last_re,\s+$strict_init_re$/) {
+    $in =~s /\b($strict_last_re), ($strict_init_re)(?=,|$)/$2 $1/g;
+  }
+  
+  # Assuming first names precede last, split into tokens:
+  
   my @tokens = grep {$_} # drop empty tokens
     split m{
       (?<=[,;]) | # keep comma with preceding.
@@ -264,10 +281,10 @@ REGINALD TOSE-INNES & BARTON H. WARNOCK | REGINALD TOSE-INNES | BARTON H. WARNOC
 # rare?
 
 # Betts, Thealcald Jonas, Baker.
-# Powers, J. R.
-# HAGEN, K. S.
-# Stage, G., Snelling, R.R.
-# Powell, J.
+Powers, J. R. | J. R. Powers
+HAGEN, K. S. |  K. S. HAGEN
+Stage, G., Snelling, R.R. | G. Stage | R.R. Snelling
+Powell, J. | J. Powell
 
 
 ### Question marks:
