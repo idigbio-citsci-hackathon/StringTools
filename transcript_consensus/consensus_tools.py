@@ -86,9 +86,10 @@ def character_consensus(x, wdir):
 
         Returns: Single string
     '''
-
+    
     # Convert string into SeqRecord objects
     y = [re.sub(" ", "_", string) for string in x]
+    y = [re.sub("\.", "%", string) for string in y]
     temp = [Seq(string, "alphabet") for string in y]
     temp = [SeqRecord(string, id = str(acc)) for acc, string in enumerate(temp)]
     temp_file = os.path.join(wdir, "temp.fasta")
@@ -108,18 +109,43 @@ def character_consensus(x, wdir):
     summary_align = AlignInfo.SummaryInfo(alignres)
 
     # Determine consensus
-    consensus = summary_align.dumb_consensus(threshold = 0.5, require_multiple = 1, ambiguous = "")
+    consensus = summary_align.dumb_consensus(threshold = 0.5, require_multiple = 1, consensus_alpha = None, ambiguous = "")
 
-    return re.sub("_", " ", str(consensus))
+    consensus = re.sub("_", " ", str(consensus))
+    consensus = re.sub("%", ".", str(consensus))
+    return consensus
+
+y = ["12 mi. W. Oakland, Cal", "12 mi West Oakland, Califor", "12 mi. W. Oakland, Cal", "12 miles W Oakland, Cal"]
+test_dir = "/Users/junyinglim/Desktop"
+
+asd2 = token_consensus(y, test_dir)
+asd1 = character_consensus(y, wdir = test_dir)
+
+# Define replacement dictionary
+'''
+target = "Hello. "
+redict = {' ':'_', '.':'%'}
+reobj = re.compile('|'.join(redict.keys()))
+result = reobj.sub(lambda m: redict[m.group(0)], target)
+print result
+
+target = "... In another moment down went Alice after it, never once considering how in the world she was to get out again. The rabbit-hole went straight on like a tunnel for some way, and then dipped suddenly down, so suddenly that Alice had not a moment to think about stopping herself before she found herselffalling down a very deep well."
+
+rdict = {'Alice': 'ALICE',
+         'down': 'DOWN',
+         'suddenly': 'SUDDENLY',
+         'she': 'SHE',
+         'herself': 'HERSELF'}
+
+robj = re.compile('|'.join(rdict.keys()))
+result = robj.sub(lambda m: rdict[m.group(0)], target)
+print result
+'''
 
 
 ## TESTING NFN TRANSCRIPTIONS AGAINST GOLD DATASET (i.e. transcribed in verbatim)
-y = ["12 mi. W. Oakland", "12 mi. West Oakland", "12 mi W. Oakland", "12 miles W Oakland"]
-test_dir = "/Users/junyinglim/Desktop"
 
-asd1 = character_consensus(y, wdir = test_dir)
-asd2 = token_consensus(y, test_dir)
-
+'''
 import pandas as pd
 from collections import defaultdict
 import itertools
@@ -163,6 +189,8 @@ x = compare_results["Collector_consensus"] == compare_results["Collector_gold"]
 compare_results.to_csv(os.path.join(test_dir, "prelim.csv"))
 
 
+'''
+'''
 ## APPROACH 3: SEQUENCE MATCHER APPROACH (might be faster?)
 # Sequence align token IDs
 
@@ -190,3 +218,4 @@ ocrsub["result"] = json.dumps({
    }
 })
 ocrsub["score"] = 100*s.ratio()
+'''
