@@ -46,7 +46,7 @@ sub list_split {
       (?<=[,;]) | # keep comma with preceding.
       (?:\s+\W?(?:with|and)\W?\s+) |
       (?:\s+w/) |
-      (?:\+|&)
+      (?:\+|&|/)
     }xi, $in; # I don't have positive examples where case-insensitive is actually necessary.
   my @out;
   while (@tokens) {
@@ -125,14 +125,14 @@ R. K,. Godfrey and Richard D. Houk | R. K. Godfrey | Richard D. Houk
 # P.J. Crutchfeld & Laura & Thomas Crutchfield | P.J. Crutchfeld | Laura Crutchfield | Thomas Crutchfield
 # R. K. Godfrrey with Robt. & John Lazor | R. K. Godfrrey | Robt. Lazor | John Lazor
 # D. B. & S. S. Ward | D. B. Ward | S. S. Ward
+# Robert & Mabel Kral/
 
 ### Slashes:
 
-# Michel G. Lelong / Ken Rogers | Michel G. Lelong | Ken Rogers
-# SW Leonard/D. Culwell/M. Ripperton | SW Leonard | D. Culwell | M. Ripperton
-# A. H. Curtiss/ det. C. B. Heiser, Jr.
+Michel G. Lelong / Ken Rogers | Michel G. Lelong | Ken Rogers
+SW Leonard/D. Culwell/M. Ripperton | SW Leonard | D. Culwell | M. Ripperton
+A. H. Curtiss/ det. C. B. Heiser, Jr. | A. H. Curtiss | det. C. B. Heiser, Jr.
 # R/K/ Godfrey & John Morrill
-# Robert & Mabel Kral/
 
 ### Parens:
 
