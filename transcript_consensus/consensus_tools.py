@@ -136,10 +136,10 @@ gold_data = pd.read_csv(os.path.join(test_dir,"Calbug_Gold.csv"))
 gold_data = gold_data.fillna("") # Converts all NaNs into empty strings
 
 
-def temp_wrapper(accession, field, data, method):
+def temp_wrapper(accession, field, data, method, wdir):
     
     # Generate dictionary of accessions paired with list of field entries
-    entry_list = zip(list(nfn_data[accession]), list(data[field]))
+    entry_list = zip(list(data[accession]), list(data[field]))
     entry_id = defaultdict(list)
     for k,v in entry_list:
         entry_id[k].append(v)
@@ -157,9 +157,9 @@ def temp_wrapper(accession, field, data, method):
         # If entries are not identical, use consensus
         else:
             if method == "character":
-                entry_results[k].append(character_consensus(v, test_dir))
+                entry_results[k].append(character_consensus(v, wdir))
             elif method == "token":
-                entry_results[k].append(token_consensus(v, test_dir))
+                entry_results[k].append(token_consensus(v, wdir))
 
 
     # Convert results into dataframe [OMG I'm starting to love list comprehensions]
@@ -171,24 +171,43 @@ def temp_wrapper(accession, field, data, method):
     return results
 
 
+# Pulled from wrapper for debugging
+
+entry_list = zip(list(nfn_data["filename"]), list(nfn_data["Collector"]))
+entry_id = defaultdict(list)
+for k,v in entry_list:
+    entry_id[k].append(v)
+
+
+## TO DO ## Convert spaces into tokens
+
 # Comparison with gold data set
+'''
+character_coll = temp_wrapper(accession = "filename", field = "Collector", method = "character", data = nfn_data, wdir = test_dir)
+character_loc = temp_wrapper(accession = "filename", field = "Locality", method = "character", data = nfn_data, wdir = test_dir)
 
-character_coll = temp_wrapper(accession = "filename", field = "Collector", method = "character", data = nfn_data)
+token_coll = temp_wrapper(accession = "filename", field = "Collector", method = "token", data = nfn_data, wdir = test_dir)
+token_loc = temp_wrapper(accession = "filename", field = "Locality", method = "token", data = nfn_data, wdir = test_dir)
+
+character_results = pd.merge(gold_data, character_coll, on = "filename", suffixes = ("_gold", "_consensus"))
+character_results = pd.merge(character_results, character_loc, on = "filename", suffixes = ("_gold", "_consensus"))
+
+token_results = pd.merge(gold_data, token_coll, on = "filename", suffixes = ("_gold", "_consensus"))
+token_results = pd.merge(token_results, token_loc, on = "filename", suffixes = ("_gold", "_consensus"))
+
+x1 = token_results["Collector_consensus"] == token_results["Collector_gold"]
+x2 = token_results["Locality_consensus"] == token_results["Locality_gold"]
+
+float(sum(x1))/float(len(x1))
+float(sum(x2))/float(len(x2))
 
 
-compare_results = pd.merge(gold_data, character_coll, on = "filename", suffixes = ("_gold", "_consensus"))
-
-
-x = compare_results["Collector_consensus"] == compare_results["Collector_gold"]
-float(x)/len(x)
 
 
 
+token_results.to_csv(os.path.join(test_dir, "prelim.csv"))
 
-
-compare_results.to_csv(os.path.join(test_dir, "prelim.csv"))
-
-
+'''
 
 '''
 ## APPROACH 3: SEQUENCE MATCHER APPROACH (might be faster?)
