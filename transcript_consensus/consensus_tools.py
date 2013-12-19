@@ -83,7 +83,7 @@ def token_consensus(x, wdir):
 ## APPROACH 2: CHARACTER ALIGNMENT
 def character_consensus(x, wdir):
     ''' x   -- list of strings
-
+    For more information on using MAFFT for string matching http://mafft.cbrc.jp/alignment/software/textcomparison.html
         Returns: Single string
     '''
     
@@ -121,31 +121,10 @@ test_dir = "/Users/junyinglim/Desktop"
 asd2 = token_consensus(y, test_dir)
 asd1 = character_consensus(y, wdir = test_dir)
 
-# Define replacement dictionary
-'''
-target = "Hello. "
-redict = {' ':'_', '.':'%'}
-reobj = re.compile('|'.join(redict.keys()))
-result = reobj.sub(lambda m: redict[m.group(0)], target)
-print result
-
-target = "... In another moment down went Alice after it, never once considering how in the world she was to get out again. The rabbit-hole went straight on like a tunnel for some way, and then dipped suddenly down, so suddenly that Alice had not a moment to think about stopping herself before she found herselffalling down a very deep well."
-
-rdict = {'Alice': 'ALICE',
-         'down': 'DOWN',
-         'suddenly': 'SUDDENLY',
-         'she': 'SHE',
-         'herself': 'HERSELF'}
-
-robj = re.compile('|'.join(rdict.keys()))
-result = robj.sub(lambda m: rdict[m.group(0)], target)
-print result
-'''
-
 
 ## TESTING NFN TRANSCRIPTIONS AGAINST GOLD DATASET (i.e. transcribed in verbatim)
 
-'''
+
 import pandas as pd
 from collections import defaultdict
 import itertools
@@ -156,40 +135,61 @@ nfn_data = nfn_data.fillna("") # Converts all NaNs into empty strings
 gold_data = pd.read_csv(os.path.join(test_dir,"Calbug_Gold.csv"))
 gold_data = gold_data.fillna("") # Converts all NaNs into empty strings
 
-# Generate dictionary of accessions paired with list of field entries
-entry_list = zip(list(nfn_data["filename"]), list(nfn_data["Collector"]))
-entry_id = defaultdict(list)
-for k,v in entry_list:
-    entry_id[k].append(v)
+
+def temp_wrapper(accession, field, data, method):
+    
+    # Generate dictionary of accessions paired with list of field entries
+    entry_list = zip(list(nfn_data[accession]), list(data[field]))
+    entry_id = defaultdict(list)
+    for k,v in entry_list:
+        entry_id[k].append(v)
 
 
-# Find consensus in NfN data
-entry_results = defaultdict(list)
-for k,v in entry_id.iteritems():
-    print "Reconciling transcriptions for", k
+    # Find consensus in NfN data
+    entry_results = defaultdict(list)
+    for k,v in entry_id.iteritems():
+        print "Reconciling transcriptions for", k
 
-    # If entries are identical, then entry is consensus
-    if len(set(v)) == 1:
-        entry_results[k].append(v[0])
+        # If entries are identical, then entry is consensus
+        if len(set(v)) == 1:
+            entry_results[k].append(v[0])
 
-    # If entries are not identical, use consensus
-    else:
-        entry_results[k].append(character_consensus(v, test_dir))
+        # If entries are not identical, use consensus
+        else:
+            if method == "character":
+                entry_results[k].append(character_consensus(v, test_dir))
+            elif method == "token":
+                entry_results[k].append(token_consensus(v, test_dir))
 
-# Convert results into dataframe OMG I'm starting to love list comprehensions
-collector = [str(collector[0]) for collector in entry_results.values()] # Necessary to index 0 and default dict values are lists
-filename = [str(filename) for filename in entry_results.keys()]
-results = pd.DataFrame({"filename":filename, "Collector":collector})
+
+    # Convert results into dataframe [OMG I'm starting to love list comprehensions]
+    est = [str(est[0]) for est in entry_results.values()] # Necessary to index 0 and default dict values are lists
+    acc = [str(acc) for acc in entry_results.keys()]
+    results = pd.DataFrame({str(accession):acc, str(field):est})
+
+    # Export
+    return results
+
 
 # Comparison with gold data set
-compare_results = pd.merge(gold_data, results, on = "filename", suffixes = ("_gold", "_consensus"))
+
+character_coll = temp_wrapper(accession = "filename", field = "Collector", method = "character", data = nfn_data)
+
+
+compare_results = pd.merge(gold_data, character_coll, on = "filename", suffixes = ("_gold", "_consensus"))
 
 
 x = compare_results["Collector_consensus"] == compare_results["Collector_gold"]
+float(x)/len(x)
+
+
+
+
+
 compare_results.to_csv(os.path.join(test_dir, "prelim.csv"))
 
 
-'''
+
 '''
 ## APPROACH 3: SEQUENCE MATCHER APPROACH (might be faster?)
 # Sequence align token IDs
