@@ -4,19 +4,31 @@ from sys import argv
 
 class NameSplitter:
     
+    
     def __init__(self):
         pass
-        
+    
+    
     def split(self, input):
         '''Given a list of collectors as a string, try to parse it into an array of individual names.'''
+        cleaned = self._preclean(input)
+        inverted = self._invert(cleaned)
+        names = self._extract(inverted)
+        return self._distribute(names)
         
-        # Preliminary clean-up:
     
-        input = re.sub(r'^collected by\b:?', '', input, flags=re.I)
-        input = re.sub(r'\b(collectors?)|(collrs?\.?)$', '', input, flags=re.I)
-        input = re.sub(r'(?<![A-Z])([A-Z]),', r'\1.', input) # There are lots of commas after initials.
-        input = re.sub(r'\.+', '.', input)
-        
+    def _preclean(self, input):
+        cleaned = re.sub(r'''
+                (?: ^ collected\sby\b:?) |
+                (?: \b collectors? $) |
+                (?: \b collrs? \.? $)''',
+            '', input, flags=re.I|re.X)
+        cleaned = re.sub(r'(?<![A-Z])([A-Z]),', r'\1.', cleaned) # There are lots of commas after initials.
+        cleaned = re.sub(r'\.+', '.', cleaned)
+        return cleaned
+    
+    
+    def _invert(self, input):
         # Before tokenization, look at the very end and see if there are trailing initials.
         # This would suggest that the inputs are transposed: If they are, try to switch them back. 
         # I haven't seen that many instances where input are inverted in this data,
@@ -30,15 +42,16 @@ class NameSplitter:
             input = re.sub(
                 r'\b(' + strict_last_re + ')' + between_re + '(' + strict_init_re + ')(?=,|$)',
                 r'\2 \1', input)
-        
-        # Assuming first names precede last, split into tokens:
-
+        return input
+    
+    
+    def _extract(self, inverted):
         tokens = deque(re.split(
             r'''
                 (?:  \s+ \W? (?:with|and) \W? \s+ ) |
                 (?:  \bw/ ) |
                 (?:  [,;+&()/] )                        # not confident that splitting on parens is best.
-            ''', input, flags=re.X|re.I))
+            ''', inverted, flags=re.X|re.I))
         
         names = []
         while tokens:
@@ -55,8 +68,10 @@ class NameSplitter:
             elif token:
                 names.append(token)
                 
-        names = [re.sub(r'\s+', ' ', name.strip(' ')) for name in names]
-        
+        return [re.sub(r'\s+', ' ', name.strip(' ')) for name in names]
+    
+    
+    def _distribute(self, names):
         # Distribute last names across first names:
         #   Scan from right-to-left;
         #     if there's a last name, store it
@@ -85,6 +100,7 @@ class NameSplitter:
                 full_names.appendleft(current)
         
         return list(full_names)
+
         
         
 if __name__ == '__main__':
