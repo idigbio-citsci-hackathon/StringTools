@@ -5,30 +5,30 @@ from sys import argv
 class NameSplitter:
     
     
-    def __init__(self):
+    def __init__(self, preclean_re=r'''
+            (?: ^ collected\sby\b:?) |
+            (?: \b collectors? $) |
+            (?: \b collrs? \.? $)'''): # TODO: more optional parameters
+        self.preclean_re = preclean_re
         pass
     
     
     def split(self, input):
         '''Given a list of collectors as a string, try to parse it into an array of individual names.'''
-        cleaned = self._preclean(input)
-        inverted = self._invert(cleaned)
-        names = self._extract(inverted)
-        return self._distribute(names)
-        
-    
-    def _preclean(self, input):
-        cleaned = re.sub(r'''
-                (?: ^ collected\sby\b:?) |
-                (?: \b collectors? $) |
-                (?: \b collrs? \.? $)''',
-            '', input, flags=re.I|re.X)
+        cleaned = self.preclean(input)
+        inverted = self.invert(cleaned)
+        names = self.extract(inverted)
+        return self.distribute(names)
+
+      
+    def preclean(self, input):
+        cleaned = re.sub(self.preclean_re, '', input, flags=re.I|re.X)
         cleaned = re.sub(r'(?<![A-Z])([A-Z]),', r'\1.', cleaned) # There are lots of commas after initials.
         cleaned = re.sub(r'\.+', '.', cleaned)
         return cleaned
     
     
-    def _invert(self, input):
+    def invert(self, input):
         # Before tokenization, look at the very end and see if there are trailing initials.
         # This would suggest that the inputs are transposed: If they are, try to switch them back. 
         # I haven't seen that many instances where input are inverted in this data,
@@ -45,7 +45,7 @@ class NameSplitter:
         return input
     
     
-    def _extract(self, inverted):
+    def extract(self, inverted):
         tokens = deque(re.split(
             r'''
                 (?:  \s+ \W? (?:with|and) \W? \s+ ) |
@@ -71,7 +71,7 @@ class NameSplitter:
         return [re.sub(r'\s+', ' ', name.strip(' ')) for name in names]
     
     
-    def _distribute(self, names):
+    def distribute(self, names):
         # Distribute last names across first names:
         #   Scan from right-to-left;
         #     if there's a last name, store it

@@ -1,11 +1,11 @@
 import unittest
-import NameSplitter
+from name_splitter import NameSplitter
 import re
 
 class TestNameSplitter(unittest.TestCase):
 
     def setUp(self):
-        self.splitter = NameSplitter.NameSplitter()
+        self.splitter = NameSplitter()
 
     def test_split(self):
         tests = '''
