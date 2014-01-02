@@ -6,9 +6,16 @@ class TestNameSplitter(unittest.TestCase):
 
     def setUp(self):
         self.splitter = NameSplitter()
+        
+    def make_input_expected_pairs(self, big_string):
+        no_comments = [re.match(r'^[^#]*', line).group() for line in big_string.split('\n')]
+        arrays = [
+            [element.strip(' ') for element in line.split('|')]
+                for line in no_comments]
+        return [(an_array[0],an_array[1:]) for an_array in arrays if an_array != ['']]
 
     def test_split(self):
-        tests = '''
+        tests = self.make_input_expected_pairs('''
             # All test cases are taken from real crowd-sourced data.
             
             ### Basics: split on punct or preposition, then reconnect 'jr' and 'sr'.
@@ -210,13 +217,9 @@ class TestNameSplitter(unittest.TestCase):
             # Loran C. Anderson w/Gil Nelson R>K> Godfrey Herbarium (FSU)
             # R:D. Houk ans R:K: Godfrey
             # Loran C: Anderson
-        '''
-        no_comments = [re.match(r'^[^#]*', line).group() for line in tests.split('\n')]
-        arrays = [
-            [element.strip(' ') for element in line.split('|')]
-                for line in no_comments]
-        fail = 0;
-        for (input, expected) in [(an_array[0],an_array[1:]) for an_array in arrays if an_array != ['']]:
+        ''')
+        fail = 0
+        for (input, expected) in tests:
             actual = self.splitter.split(input)
             if actual != expected:
                 print('FAIL: given "' + input + '" expected ', expected, '; actual ', actual)
