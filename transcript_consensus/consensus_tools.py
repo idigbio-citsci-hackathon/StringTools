@@ -1,22 +1,32 @@
-## DEFINE TEST STRING
+## CONSENSUS TOOLS
+# Description: A set of tools for reconciling multiple variants of a string of text using sequence alignment and consensus algorithms
+# Author: Junying Lim
+# Date: 13th Jan 2014
 
-x = ["The quick brown fox", "The quick Brown fox", "Tha quick brown fox jumps"]
+# Notes:
+# Developed during the CITScribe hackathon organized by iDigBio, Gainsville, Florida (15 Dec - 20 Dec 2013)
+# For more information on using MAFFT for string matching http://mafft.cbrc.jp/alignment/software/textcomparison.html
 
-import string
-import nltk
-import os
+
+## DEPENDENCIES
+import os # Path tools
+import string # String tools
+import nltk # For tokenizing
+import subprocess # For subprocessing MAFFT
+import re # Regular expressions
+from Bio import AlignIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
-import subprocess
-import re
-from Bio import AlignIO
 from Bio.Align import AlignInfo
 
+mafft = "/usr/local/bin/mafft"
 
-## APPROACH ONE: TOKEN ALIGNMENT
+
 def token_consensus(x, wdir):
-    ''' Arguments:
+    ''' Implements a sequence alignment and consensus finding on tokenized strings
+
+        Arguments:
         x       -- List of strings
 
         Returns:
@@ -83,7 +93,7 @@ def token_consensus(x, wdir):
 ## APPROACH 2: CHARACTER ALIGNMENT
 def character_consensus(x, wdir):
     ''' x   -- list of strings
-    For more information on using MAFFT for string matching http://mafft.cbrc.jp/alignment/software/textcomparison.html
+    
         Returns: Single string
     '''
     
@@ -120,28 +130,7 @@ def character_consensus(x, wdir):
     consensus = consensus.strip()
     return consensus
 
-y = ["12 mi. W. Oakland, Cal", "12 mi West Oakland, Califor", "12 mi. W. Oakland, Cal", "12 miles W Oakland, Cal"]
-test_dir = "/Users/junyinglim/Desktop"
-
-asd2 = token_consensus(y, test_dir)
-asd1 = character_consensus(y, wdir = test_dir)
-
-
-## TESTING NFN TRANSCRIPTIONS AGAINST GOLD DATASET (i.e. transcribed in verbatim)
-
-
-import pandas as pd
-from collections import defaultdict
-import itertools
-
-nfn_data = pd.read_csv(os.path.join(test_dir,"Calbug_NfN.csv"))
-nfn_data = nfn_data.fillna("") # Converts all NaNs into empty strings
-
-gold_data = pd.read_csv(os.path.join(test_dir,"Calbug_Gold.csv"))
-gold_data = gold_data.fillna("") # Converts all NaNs into empty strings
-
-
-def temp_wrapper(accession, field, data, method, wdir):
+def variant_consensus(accession, field, data, method, wdir):
     
     # Generate dictionary of accessions paired with list of field entries
     entry_list = zip(list(data[accession]), list(data[field]))
@@ -177,66 +166,11 @@ def temp_wrapper(accession, field, data, method, wdir):
 
 
 # Pulled from wrapper for debugging
-
+'''
 entry_list = zip(list(nfn_data["filename"]), list(nfn_data["Locality"]))
 entry_id = defaultdict(list)
 for k,v in entry_list:
     entry_id[k].append(v)
 entry_id["UMMZI212852 Sympetrum madidum.jpg"]
-
+'''
 ## TO DO ## Convert spaces into tokens
-
-# Comparison with gold data set
-
-character_coll = temp_wrapper(accession = "filename", field = "Collector", method = "character", data = nfn_data, wdir = test_dir)
-character_loc = temp_wrapper(accession = "filename", field = "Locality", method = "character", data = nfn_data, wdir = test_dir)
-
-token_coll = temp_wrapper(accession = "filename", field = "Collector", method = "token", data = nfn_data, wdir = test_dir)
-token_loc = temp_wrapper(accession = "filename", field = "Locality", method = "token", data = nfn_data, wdir = test_dir)
-
-character_results = pd.merge(gold_data, character_coll, on = "filename", suffixes = ("_gold", "_consensus"))
-character_results = pd.merge(character_results, character_loc, on = "filename", suffixes = ("_gold", "_consensus"))
-
-token_results = pd.merge(gold_data, token_coll, on = "filename", suffixes = ("_gold", "_consensus"))
-token_results = pd.merge(token_results, token_loc, on = "filename", suffixes = ("_gold", "_consensus"))
-
-x1 = character_results["Collector_consensus"] == character_results["Collector_gold"]
-x2 = character_results["Locality_consensus"] == character_results["Locality_gold"]
-
-y1 = token_results["Collector_consensus"] == token_results["Collector_gold"]
-y2 = token_results["Locality_consensus"] == token_results["Locality_gold"]
-
-
-token_results.to_csv(os.path.join(test_dir, "token_consensus.csv"))
-character_results.to_csv(os.path.join(test_dir, "character_consensus.csv"))
-
-
-'''
-## APPROACH 3: SEQUENCE MATCHER APPROACH (might be faster?)
-# Sequence align token IDs
-
-# Search for first name until last name found
-# 
-# Remove tokens that are JUST punctuations
-
-import nltk
-from difflib import SequenceMatcher
-import json
-
-humantext = "Blah blah"
-ocrtext = "8lah blah"
-
-ocrsub = {}
-human_tokens = nltk.word_tokenize(humantext.lower())
-ocr_tokens = nltk.word_tokenize(ocrtext.lower())
-
-s = SequenceMatcher(None,human_tokens,ocr_tokens)
-ocrsub["result"] = json.dumps({
-   "matches": s.get_matching_blocks(),
-                   "tokens": ocr_tokens,
-   "score": {
-       "ratio": s.ratio()
-   }
-})
-ocrsub["score"] = 100*s.ratio()
-'''
